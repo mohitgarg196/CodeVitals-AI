@@ -223,3 +223,18 @@ V2 Architecture:
                     │
                     ▼
                   Tools
+
+
+LLM
+ │
+ │ "I want to execute X"
+ ▼
+HARNESS
+ │
+ ├── Is X allowed?
+ ├── Is budget available?
+ ├── Is this a repeated action?
+ ├── Is the path safe?
+ │
+ ▼
+Tool execution
