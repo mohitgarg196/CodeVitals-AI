@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 
+from .harness import AgentHarness
+from .state import AgentState, ToolExecution
 from .analyzer import AnalysisReport
 from .tools import (
     list_files,
@@ -25,7 +27,7 @@ MODEL_NAME = "gemini-3.6-flash"
 
 
 SYSTEM_PROMPT = """
-You are SecureOpt, an autonomous software security
+You are CodeVitals, an autonomous software security
 and performance analysis agent.
 
 Your goal is to analyze a software repository for:
@@ -158,26 +160,30 @@ AVAILABLE_TOOLS = {
 }
 
 
-def execute_tool(name: str, arguments: dict):
+# def execute_tool(name: str, arguments: dict):
 
-    tool = AVAILABLE_TOOLS.get(name)
+#     tool = AVAILABLE_TOOLS.get(name)
 
-    if tool is None:
-        return {
-            "error": f"Unknown tool: {name}"
-        }
+#     if tool is None:
+#         return {
+#             "error": f"Unknown tool: {name}"
+#         }
 
-    try:
-        return tool(**arguments)
+#     try:
+#         return tool(**arguments)
 
-    except Exception as exc:
-        return {
-            "error": f"Tool execution failed: {str(exc)}"
-        }
+#     except Exception as exc:
+#         return {
+#             "error": f"Tool execution failed: {str(exc)}"
+#         }
 
 
 def analyze_with_agent(repo_path: str):
-
+    harness = AgentHarness()
+    state = AgentState(
+        task="Analyze repository for security and optimization issues",
+        repo_path=repo_path,
+    )
     contents = [
         types.Content(
             role="user",
@@ -200,9 +206,17 @@ Start by exploring the repository.
 
     tool_calls = 0
 
-    for iteration in range(10):
+    while harness.budget.can_continue():
 
-        print(f"\n--- Agent iteration {iteration + 1} ---")
+        harness.budget.record_iteration()
+
+        iteration = harness.budget.iterations_used
+
+        state.iteration = iteration
+
+        print(
+            f"\n--- Agent iteration {iteration} ---"
+        )
 
         response = client.models.generate_content(
             model=MODEL_NAME,
@@ -254,13 +268,25 @@ Start by exploring the repository.
                 f"{tool_name}({arguments})"
             )
 
-            result = execute_tool(
+            result = harness.execute_tool(
                 tool_name,
                 arguments
             )
 
+            if result["status"] == "success":
+                state.tool_calls += 1
+
             print(
                 f"Tool result received from {tool_name}"
+            )
+
+            state.tool_history.append(
+                ToolExecution(
+                    tool_name=tool_name,
+                    arguments=arguments,
+                    allowed=result["status"] != "blocked",
+                    result=result,
+                )
             )
 
             contents.append(

@@ -8,7 +8,7 @@ def main():
     repo_path = "test_repo"
 
     print("===================================")
-    print("        SECUREOPT V1")
+    print("        CODEVITALS V1")
     print("       TOOL-USING AGENT")
     print("===================================\n")
 
@@ -20,7 +20,7 @@ def main():
 
     end_time = time.perf_counter()
 
-    print("\n========== SECUREOPT REPORT ==========\n")
+    print("\n========== CODEVITALS REPORT ==========\n")
 
     for index, finding in enumerate(
         report.findings,
