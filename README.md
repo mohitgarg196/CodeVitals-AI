@@ -107,3 +107,30 @@ Findings       : 4
 Input tokens   : 287
 Output tokens  : 463
 Total tokens   : 3315
+
+
+V1
+
+                    ┌──────────────┐
+                    │    Gemini    │
+                    │    Agent     │
+                    └──────┬───────┘
+                           │
+                    "I need information"
+                           │
+             ┌─────────────┼─────────────┐
+             ↓             ↓             ↓
+        list_files    search_code    read_file
+             │             │             │
+             └─────────────┼─────────────┘
+                           ↓
+                      Observation
+                           ↓
+                         Gemini
+                           │
+                    ┌──────┴──────┐
+                    ↓             ↓
+                  More?          Done
+                    │             │
+                    └─── loop     ↓
+                                Report
