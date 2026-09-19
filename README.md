@@ -238,3 +238,32 @@ HARNESS
  │
  ▼
 Tool execution
+
+V2 Logs:
+
+TEST 1: Valid tool
+
+[HARNESS] Requested tool: list_files
+[HARNESS] Status: success
+{'status': 'success', 'result': {'files': ['inefficient.py', 'vulnerable.py'], 'count': 2}}
+
+TEST 2: Duplicate tool
+
+[HARNESS] Requested tool: list_files
+[HARNESS] Status: blocked
+[HARNESS] Reason: Duplicate tool call detected.
+{'status': 'blocked', 'reason': 'Duplicate tool call detected.'}
+
+TEST 3: Invalid tool
+
+[HARNESS] Requested tool: delete_repository
+[HARNESS] Status: blocked
+[HARNESS] Reason: Tool 'delete_repository' is not allowed.
+{'status': 'blocked', 'reason': "Tool 'delete_repository' is not allowed."}
+
+TEST 4: Path traversal
+
+[HARNESS] Requested tool: read_file
+[HARNESS] Status: blocked
+[HARNESS] Reason: File path is outside the repository.
+{'status': 'blocked', 'reason': 'File path is outside the repository.'}
