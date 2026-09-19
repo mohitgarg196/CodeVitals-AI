@@ -190,3 +190,36 @@ Tool calls            : 3
 Input tokens          : 838
 Output tokens         : 355
 Total tokens          : 3474
+
+
+=======================================================================================================
+
+V2 Architecture: 
+
+                         CodeVitals
+                              │
+                              ▼
+                       ┌─────────────┐
+                       │    Agent    │
+                       │   Gemini    │
+                       └──────┬──────┘
+                              │
+                       "I want to..."
+                              │
+                              ▼
+                    ┌──────────────────┐
+                    │  AGENT HARNESS   │
+                    │                  │
+                    │  Policy          │
+                    │  Permissions     │
+                    │  Budget          │
+                    │  State           │
+                    │  Loop Detection  │
+                    └────────┬─────────┘
+                             │
+                    ┌────────┴────────┐
+                    ▼                 ▼
+                  ALLOW             BLOCK
+                    │
+                    ▼
+                  Tools
