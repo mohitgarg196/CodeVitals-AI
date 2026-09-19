@@ -346,4 +346,35 @@ Total tokens          : 3643
 
 ================================================================================================================
 
+V3 Architecture:
 
+User
+ │
+ │ codevitals scan ./repo
+ ▼
+Repository Loader
+ │
+ ▼
+Repository Discovery
+ │
+ ├── files
+ ├── languages
+ └── metadata
+ │
+ ├───────────────┐
+ ▼               ▼
+Security       Optimization
+Detector        Detector
+ │               │
+ └───────┬───────┘
+         ▼
+   Candidate Findings
+         │
+         ▼
+    Agent + Harness
+         │
+         ▼
+    Investigation
+         │
+         ▼
+   Final Findings
