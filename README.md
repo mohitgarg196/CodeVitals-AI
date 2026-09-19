@@ -43,6 +43,9 @@ V7
 Evaluation + Model Routing
 
 
+======================================================================================================
+
+
 V0 — Full-Context LLM Baseline
 Architecture
 
@@ -109,6 +112,8 @@ Output tokens  : 463
 Total tokens   : 3315
 
 
+===============================================================================================================
+
 V1
 
                     ┌──────────────┐
@@ -134,3 +139,57 @@ V1
                     │             │
                     └─── loop     ↓
                                 Report
+
+
+Reading repository...
+Repository loaded.
+Repository characters: 529
+
+Sending repository to Gemini...
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+
+========== SECUREOPT REPORT ==========
+
+Finding #1
+Category      : Performance
+Severity      : Medium
+File          : inefficient.py
+Line          : 4
+Title         : N+1 Query Inefficiency in Database Lookup
+Description   : The get_users function executes a database query inside a loop for each user ID, leading to an N+1 query pattern and significant database latency.
+Recommendation: Use a bulk query operator such as $in to fetch all users in a single database round-trip.
+------------------------------------------------------------
+Finding #2
+Category      : Security
+Severity      : High
+File          : vulnerable.py
+Line          : 8
+Title         : SQL Injection in get_user
+Description   : User input is interpolated directly into a SQL query string using f-strings, allowing SQL injection.
+Recommendation: Use parameterized queries with placeholder bindings instead of string formatting.
+------------------------------------------------------------
+Finding #3
+Category      : Security
+Severity      : High
+File          : vulnerable.py
+Line          : 14
+Title         : Command Injection in run_command
+Description   : Passing input directly to os.system enables shell command injection.
+Recommendation: Avoid os.system and use the subprocess module with shell=False and input passed as an argument vector.
+------------------------------------------------------------
+Finding #4
+Category      : Security
+Severity      : High
+File          : vulnerable.py
+Line          : 18
+Title         : Arbitrary Code Execution in evaluate
+Description   : The eval function executes arbitrary Python code from string inputs.
+Recommendation: Avoid using eval on dynamic or untrusted inputs; use safe evaluation methods such as ast.literal_eval where appropriate.
+------------------------------------------------------------
+
+========== METRICS ==========
+Latency        : 21.95s
+Findings       : 4
+Input tokens   : 287
+Output tokens  : 297
+Total tokens   : 2836
