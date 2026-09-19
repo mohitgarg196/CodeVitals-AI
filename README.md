@@ -270,8 +270,8 @@ TEST 4: Path traversal
 
 V2 METRICS:
 ===================================
-        SECUREOPT V1
-       TOOL-USING AGENT
+        CODEVITALS V2
+        AGENT + HARNESS
 ===================================
 
 
