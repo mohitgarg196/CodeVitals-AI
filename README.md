@@ -267,3 +267,83 @@ TEST 4: Path traversal
 [HARNESS] Status: blocked
 [HARNESS] Reason: File path is outside the repository.
 {'status': 'blocked', 'reason': 'File path is outside the repository.'}
+
+V2 METRICS:
+===================================
+        SECUREOPT V1
+       TOOL-USING AGENT
+===================================
+
+
+--- Agent iteration 1 ---
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #1: list_files({'repo_path': 'test_repo'})
+Tool result received from list_files
+
+--- Agent iteration 2 ---
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #2: read_file({'repo_path': 'test_repo', 'file_path': 'vulnerable.py'})
+Tool result received from read_file
+
+--- Agent iteration 3 ---
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #3: read_file({'repo_path': 'test_repo', 'file_path': 'inefficient.py'})
+Tool result received from read_file
+
+--- Agent iteration 4 ---
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Agent finished.
+
+========== SECUREOPT REPORT ==========
+
+Finding #1
+Category      : Security
+Severity      : High
+File          : vulnerable.py
+Line          : 7
+Title         : SQL Injection Vulnerability
+Description   : User input is directly formatted into an SQL query string using an f-string, allowingpotential SQL injection attacks.
+Recommendation: Use parameterized queries with placeholders (e.g., cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,))) to safely pass parameters.
+------------------------------------------------------------
+Finding #2
+Category      : Security
+Severity      : High
+File          : vulnerable.py
+Line          : 12
+Title         : Command Injection Vulnerability
+Description   : Unsanitized input is passed directly to os.system, which executes commands in a system shell and allows arbitrary command execution.
+Recommendation: Avoid using os.system with untrusted input. Use subprocess.run with arguments passed as a list and shell=False.
+------------------------------------------------------------
+Finding #3
+Category      : Security
+Severity      : High
+File          : vulnerable.py
+Line          : 16
+Title         : Unsafe Code Execution via eval
+Description   : Evaluating untrusted expressions using eval() allows execution of arbitrary Python code.
+Recommendation: Avoid using eval(). Use ast.literal_eval() for parsing literals or implement a dedicated safe parser.
+------------------------------------------------------------
+Finding #4
+Category      : Performance
+Severity      : Medium
+File          : inefficient.py
+Line          : 4
+Title         : N+1 Query Inefficiency
+Description   : Executing a database query inside a loop for each user ID causes an N+1 query problem, leading to unnecessary database round-trips.
+Recommendation: Use a single batch query such as db.find({'id': {'$in': user_ids}}) to fetch all requested records in a single call.
+------------------------------------------------------------
+
+========== V2 METRICS ==========
+Latency               : 65.50s
+Total findings        : 4
+Security findings     : 3
+Optimization findings : 1
+Tool calls            : 3
+Input tokens          : 838
+Output tokens         : 342
+Total tokens          : 3643
+
+
+================================================================================================================
+
+
