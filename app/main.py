@@ -1,21 +1,66 @@
+from importlib.metadata import files
 import time
+import sys
+
+from app.detectors.merge import deduplicate_findings
 
 from .llm import analyze_with_agent
+from .repository.loader import discover_files
 
 
 def main():
 
-    repo_path = "test_repo"
+    if len(sys.argv) != 2:
+
+        print(
+            "Usage: python -m app.main <repository_path>"
+        )
+
+        sys.exit(1)
+
+
+    repo_path = sys.argv[1]
+
+    files = discover_files(repo_path)
 
     print("===================================")
-    print("        CODEVITALS V1")
-    print("       TOOL-USING AGENT")
+    print("        CODEVITALS V3")
+    print("       AGENT + HARNESS")
     print("===================================\n")
+
+    print("\n========== REPOSITORY ==========")
+
+    print(f"Repository : {repo_path}")
+    print(f"Files      : {len(files)}")
+
+    for file in files[:20]:
+        print(f"  {file}")
+
+    if len(files) > 20:
+        print(
+            f"  ... and {len(files) - 20} more"
+        )
 
     start_time = time.perf_counter()
 
     report, response, tool_calls = analyze_with_agent(
         repo_path
+    )
+
+    investigated = report.investigated_candidates
+
+    confirmed_candidates = [
+        c for c in investigated
+        if c.status == "confirmed"
+    ]
+
+    rejected_candidates = [
+        c for c in investigated
+        if c.status == "rejected"
+    ]
+
+    final_findings, duplicate_count = deduplicate_findings(
+        report.findings
     )
 
     end_time = time.perf_counter()
@@ -63,7 +108,7 @@ def main():
             )
     ]
 
-    print("\n========== V1 METRICS ==========")
+    print("\n========== V3 METRICS ==========")
 
     print(
         f"Latency               : "
