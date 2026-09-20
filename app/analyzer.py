@@ -3,6 +3,25 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 
+class CandidateFinding(BaseModel):
+    candidate_id: int
+    category: str
+    detector: str
+    severity: str
+    file: str
+    line: Optional[int] = None
+    title: str
+    description: str
+    evidence: str
+    pattern: Optional[str] = None
+
+
+class InvestigatedCandidate(BaseModel):
+    candidate_id: int
+    status: str  # confirmed / rejected
+    reason: str
+
+
 class Finding(BaseModel):
     category: str
     severity: str
@@ -11,10 +30,13 @@ class Finding(BaseModel):
     title: str
     description: str
     recommendation: str
+    source: str = "agent"
 
 
 class AnalysisReport(BaseModel):
     findings: List[Finding]
+    investigated_candidates: List[InvestigatedCandidate] = []
+
 
 SUPPORTED_EXTENSIONS = {
     ".py",
