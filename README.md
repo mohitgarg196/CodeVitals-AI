@@ -46,7 +46,7 @@ Evaluation + Model Routing
 ======================================================================================================
 
 
-V0 — Full-Context LLM Baseline
+##V0 — Full-Context LLM Baseline
 Architecture
 
 Repository
@@ -64,7 +64,7 @@ Gemini
 Structured Analysis Report
 
 
-V0 Metrics:
+##V0 Metrics:
 ========== CODEVITALS REPORT ==========
 
 Finding #1
@@ -114,7 +114,7 @@ Total tokens   : 3315
 
 ===============================================================================================================
 
-V1
+## V1 Architecture
 
                     ┌──────────────┐
                     │    Gemini    │
@@ -140,7 +140,7 @@ V1
                     └─── loop     ↓
                                 Report
 
-V1 METRICS:
+## V1 METRICS:
 
 ========== CODEVITALS REPORT ==========
 
@@ -194,7 +194,7 @@ Total tokens          : 3474
 
 =======================================================================================================
 
-V2 Architecture: 
+## V2 Architecture: 
 
                          CodeVitals
                               │
@@ -239,7 +239,7 @@ HARNESS
  ▼
 Tool execution
 
-V2 Logs:
+## V2 Logs:
 
 TEST 1: Valid tool
 
@@ -268,7 +268,7 @@ TEST 4: Path traversal
 [HARNESS] Reason: File path is outside the repository.
 {'status': 'blocked', 'reason': 'File path is outside the repository.'}
 
-V2 METRICS:
+## V2 METRICS:
 ===================================
         CODEVITALS V2
         AGENT + HARNESS
@@ -345,7 +345,7 @@ Total tokens          : 3643
 
 ======================================================================================================================
 
-V3 Architecture:
+## V3 Architecture:
 
 ./test_repo
     ↓
@@ -372,7 +372,7 @@ Optimization Detector┘
                     ↓
                  Metrics
 
-V3 Metrics:
+## V3 Metrics:
 
 ===================================
         CODEVITALS V3
