@@ -372,8 +372,7 @@ Optimization Detector┘
                     ↓
                  Metrics
 
-
-**V3 Metrics**:
+V3 Metrics:
 
 ===================================
         CODEVITALS V3
