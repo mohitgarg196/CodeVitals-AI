@@ -378,3 +378,38 @@ Detector        Detector
          │
          ▼
    Final Findings
+
+
+======================================================================================================================
+
+V3 Architecture:
+
+             Repository
+                  │
+          ┌───────┴───────┐
+          ▼               ▼
+      Security       Optimization
+      Detector         Detector
+          │               │
+          └───────┬───────┘
+                  ▼
+             Candidates
+                  │
+                  ▼
+              Gemini
+                  │
+          "Let me investigate"
+                  │
+         ┌────────┴────────┐
+         ▼                 ▼
+     read_file         search_code
+         │                 │
+         └────────┬────────┘
+                  ▼
+            Evidence
+                  │
+                  ▼
+        Confirm / Reject
+                  │
+                  ▼
+           Final Finding
