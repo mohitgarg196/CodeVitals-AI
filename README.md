@@ -371,3 +371,113 @@ Optimization Detector┘
               Final Report
                     ↓
                  Metrics
+
+
+**V3 Metrics**:
+
+===================================
+        CODEVITALS V3
+       AGENT + HARNESS
+===================================
+
+
+========== REPOSITORY ==========
+Repository : ./test_repo
+Files      : 2
+  inefficient.py
+  vulnerable.py
+
+[V3] Static detector candidates: 3
+[V3] Candidate: Potential Command Injection (vulnerable.py:14)
+[V3] Candidate: Potential Unsafe Code Execution (vulnerable.py:18)
+[V3] Candidate: Potential N+1 Database Query (inefficient.py:5)
+
+--- Agent iteration 1 ---
+Model gemini-3.8-flash is temporarily unavailable; retrying with gemini-3.5-flash-lite.
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #1: list_files({'repo_path': './test_repo'})
+
+[HARNESS] Requested tool: list_files
+[HARNESS] Status: success
+Tool result received from list_files
+
+--- Agent iteration 2 ---
+Model gemini-3.8-flash is temporarily unavailable; retrying with gemini-3.5-flash-lite.
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #2: read_file({'repo_path': './test_repo', 'file_path': 'vulnerable.py'})
+
+[HARNESS] Requested tool: read_file
+[HARNESS] Status: success
+Tool result received from read_file
+
+--- Agent iteration 3 ---
+Model gemini-3.8-flash is temporarily unavailable; retrying with gemini-3.5-flash-lite.
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #3: read_file({'file_path': 'inefficient.py', 'repo_path': './test_repo'})
+
+[HARNESS] Requested tool: read_file
+[HARNESS] Status: success
+Tool result received from read_file
+
+--- Agent iteration 4 ---
+Model gemini-3.8-flash is temporarily unavailable; retrying with gemini-3.5-flash-lite.
+Warning: there are non-text parts in the response: ['function_call', 'thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Tool call #4: search_code({'query': 'SELECT', 'repo_path': './test_repo'})
+
+[HARNESS] Requested tool: search_code
+[HARNESS] Status: success
+Tool result received from search_code
+
+--- Agent iteration 5 ---
+Model gemini-3.8-flash is temporarily unavailable; retrying with gemini-3.5-flash-lite.
+Warning: there are non-text parts in the response: ['thought_signature'], returning concatenated parsed result from text parts. Check the full candidates.content.parts accessor to get the full model response.
+Agent finished.
+
+========== CODEVITALS REPORT ==========
+
+Finding #1
+Category      : security
+Severity      : high
+File          : vulnerable.py
+Line          : 14
+Title         : Command Injection via os.system
+Description   : The function run_command executes os.system(command) directly on user-supplied or untrusted command strings, leading to potential command injection.
+Recommendation: Avoid using os.system with untrusted input. Use subprocess.run with a list of arguments instead.
+------------------------------------------------------------
+Finding #2
+Category      : security
+Severity      : critical
+File          : vulnerable.py
+Line          : 18
+Title         : Unsafe Code Execution via eval
+Description   : The evaluate function uses eval(expression) which can execute arbitrary Python code if the expression contains untrusted input.
+Recommendation: Remove eval and use a safe parser or alternative logic depending on what the expression needs to evaluate.
+------------------------------------------------------------
+Finding #3
+Category      : optimization
+Severity      : medium
+File          : inefficient.py
+Line          : 5
+Title         : N+1 Database Query Pattern
+Description   : The function get_users iterates over a list of user_ids and queries the database individually for each user, resulting in N separate database round trips.
+Recommendation: Batch the database query into a single bulk query (e.g., using an 'in' operator or bulk find) to retrieve all users in one round trip.
+------------------------------------------------------------
+Finding #4
+Category      : security
+Severity      : high
+File          : vulnerable.py
+Line          : 8
+Title         : SQL Injection in get_user
+Description   : The function get_user formats user_id directly into an SQL query string via f-string interpolation, making it vulnerable to SQL injection.
+Recommendation: Use parameterized queries with placeholders (?) instead of string formatting.
+------------------------------------------------------------
+
+========== V3 METRICS ==========
+Latency               : 9.91s
+Total findings        : 4
+Security findings     : 3
+Optimization findings : 1
+Tool calls            : 4
+Input tokens          : 1492
+Output tokens         : 683
+Total tokens          : 2175
