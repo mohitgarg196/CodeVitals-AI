@@ -343,73 +343,31 @@ Input tokens          : 838
 Output tokens         : 342
 Total tokens          : 3643
 
-
-================================================================================================================
-
-V3 Architecture:
-
-User
- │
- │ codevitals scan ./repo
- ▼
-Repository Loader
- │
- ▼
-Repository Discovery
- │
- ├── files
- ├── languages
- └── metadata
- │
- ├───────────────┐
- ▼               ▼
-Security       Optimization
-Detector        Detector
- │               │
- └───────┬───────┘
-         ▼
-   Candidate Findings
-         │
-         ▼
-    Agent + Harness
-         │
-         ▼
-    Investigation
-         │
-         ▼
-   Final Findings
-
-
 ======================================================================================================================
 
 V3 Architecture:
 
-             Repository
-                  │
-          ┌───────┴───────┐
-          ▼               ▼
-      Security       Optimization
-      Detector         Detector
-          │               │
-          └───────┬───────┘
-                  ▼
-             Candidates
-                  │
-                  ▼
-              Gemini
-                  │
-          "Let me investigate"
-                  │
-         ┌────────┴────────┐
-         ▼                 ▼
-     read_file         search_code
-         │                 │
-         └────────┬────────┘
-                  ▼
-            Evidence
-                  │
-                  ▼
-        Confirm / Reject
-                  │
-                  ▼
-           Final Finding
+./test_repo
+    ↓
+Repository Loader
+    ↓
+Security Detector ──┐
+                    ├──→ 3 Candidates
+Optimization Detector┘
+                    ↓
+              Gemini Agent
+                    ↓
+           Repository Tools
+                    ↓
+        Candidate Investigation
+                    ↓
+       ┌────────────┴────────────┐
+       ↓                         ↓
+ confirmed/rejected        New discoveries
+       └────────────┬────────────┘
+                    ↓
+               Deduplication
+                    ↓
+              Final Report
+                    ↓
+                 Metrics
