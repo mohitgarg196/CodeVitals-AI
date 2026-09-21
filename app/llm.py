@@ -2,9 +2,10 @@ import json
 import os
 
 from dotenv import load_dotenv
-from google import genai
-from google.genai import errors
-from google.genai import types
+# from google import genai
+# from google.genai import errors
+# from google.genai import types
+from openai import OpenAI
 
 from .detectors import detect_candidates
 from .harness import AgentHarness
@@ -20,17 +21,24 @@ from .tools import (
 
 load_dotenv()
 
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
+# client = genai.Client(
+#     api_key=os.getenv("GEMINI_API_KEY")
+# )
+
+
+# MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+# FALLBACK_MODEL_NAME = os.getenv(
+#     "GEMINI_FALLBACK_MODEL",
+#     "gemini-3.5-flash-lite",
+# )
+
+load_dotenv()
+
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
 )
 
-
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
-FALLBACK_MODEL_NAME = os.getenv(
-    "GEMINI_FALLBACK_MODEL",
-    "gemini-3.5-flash-lite",
-)
-
+MODEL_NAME = "gpt-5.6-luna"
 
 SYSTEM_PROMPT = """
 You are CodeVitals, an autonomous software security
@@ -115,81 +123,160 @@ Return findings containing:
 """
 
 
+# TOOLS = [
+#     {
+#         "name": "list_files",
+#         "description": (
+#             "List supported source files in the repository."
+#         ),
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "repo_path": {
+#                     "type": "string",
+#                     "description": "Repository path."
+#                 }
+#             },
+#             "required": ["repo_path"],
+#         },
+#     },
+#     {
+#         "name": "read_file",
+#         "description": (
+#             "Read the contents of a specific source file."
+#         ),
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "repo_path": {
+#                     "type": "string",
+#                     "description": "Repository path."
+#                 },
+#                 "file_path": {
+#                     "type": "string",
+#                     "description": "Relative path of the file."
+#                 },
+#             },
+#             "required": ["repo_path", "file_path"],
+#         },
+#     },
+#     {
+#         "name": "search_code",
+#         "description": (
+#             "Search source files for a text pattern and "
+#             "return matching lines."
+#         ),
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "repo_path": {
+#                     "type": "string",
+#                     "description": "Repository path."
+#                 },
+#                 "query": {
+#                     "type": "string",
+#                     "description": "Text pattern to search for."
+#                 },
+#             },
+#             "required": ["repo_path", "query"],
+#         },
+#     },
+#     {
+#         "name": "get_dependencies",
+#         "description": (
+#             "Inspect common dependency files such as "
+#             "requirements.txt and package.json."
+#         ),
+#         "parameters": {
+#             "type": "object",
+#             "properties": {
+#                 "repo_path": {
+#                     "type": "string",
+#                     "description": "Repository path."
+#                 }
+#             },
+#             "required": ["repo_path"],
+#         },
+#     },
+# ]
+
 TOOLS = [
     {
+        "type": "function",
         "name": "list_files",
-        "description": (
-            "List supported source files in the repository."
-        ),
+        "description": "List supported source files in the repository.",
         "parameters": {
             "type": "object",
             "properties": {
                 "repo_path": {
                     "type": "string",
-                    "description": "Repository path."
+                    "description": "Path to the repository."
                 }
             },
             "required": ["repo_path"],
+            "additionalProperties": False
         },
+        "strict": True
     },
     {
+        "type": "function",
         "name": "read_file",
-        "description": (
-            "Read the contents of a specific source file."
-        ),
+        "description": "Read a source file from the repository.",
         "parameters": {
             "type": "object",
             "properties": {
                 "repo_path": {
                     "type": "string",
-                    "description": "Repository path."
+                    "description": "Path to the repository."
                 },
                 "file_path": {
                     "type": "string",
-                    "description": "Relative path of the file."
-                },
+                    "description": "Path of the file relative to the repository."
+                }
             },
             "required": ["repo_path", "file_path"],
+            "additionalProperties": False
         },
+        "strict": True
     },
     {
+        "type": "function",
         "name": "search_code",
-        "description": (
-            "Search source files for a text pattern and "
-            "return matching lines."
-        ),
+        "description": "Search for a text pattern across repository source files.",
         "parameters": {
             "type": "object",
             "properties": {
                 "repo_path": {
                     "type": "string",
-                    "description": "Repository path."
+                    "description": "Path to the repository."
                 },
                 "query": {
                     "type": "string",
-                    "description": "Text pattern to search for."
-                },
+                    "description": "Text to search for."
+                }
             },
             "required": ["repo_path", "query"],
+            "additionalProperties": False
         },
+        "strict": True
     },
     {
+        "type": "function",
         "name": "get_dependencies",
-        "description": (
-            "Inspect common dependency files such as "
-            "requirements.txt and package.json."
-        ),
+        "description": "Read supported dependency files from the repository.",
         "parameters": {
             "type": "object",
             "properties": {
                 "repo_path": {
                     "type": "string",
-                    "description": "Repository path."
+                    "description": "Path to the repository."
                 }
             },
             "required": ["repo_path"],
+            "additionalProperties": False
         },
-    },
+        "strict": True
+    }
 ]
 
 
@@ -198,6 +285,63 @@ AVAILABLE_TOOLS = {
     "read_file": read_file,
     "search_code": search_code,
     "get_dependencies": get_dependencies,
+}
+
+RESPONSE_FORMAT = {
+    "type": "json_schema",
+    "name": "analysis_report",
+    "schema": {
+        "type": "object",
+        "properties": {
+            "findings": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "category": {"type": "string"},
+                        "severity": {"type": "string"},
+                        "file": {"type": "string"},
+                        "line": {"type": ["integer", "null"]},
+                        "title": {"type": "string"},
+                        "description": {"type": "string"},
+                        "recommendation": {"type": "string"},
+                        "source": {"type": "string"},
+                    },
+                    "required": [
+                        "category",
+                        "severity",
+                        "file",
+                        "line",
+                        "title",
+                        "description",
+                        "recommendation",
+                        "source",
+                    ],
+                    "additionalProperties": False,
+                },
+            },
+            "investigated_candidates": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "candidate_id": {"type": "integer"},
+                        "status": {"type": "string"},
+                        "reason": {"type": "string"},
+                    },
+                    "required": [
+                        "candidate_id",
+                        "status",
+                        "reason",
+                    ],
+                    "additionalProperties": False,
+                },
+            },
+        },
+        "required": ["findings", "investigated_candidates"],
+        "additionalProperties": False,
+    },
+    "strict": True,
 }
 
 
@@ -264,17 +408,176 @@ def _generate_content(contents):
 #         }
 
 
+# def analyze_with_agent(repo_path: str):
+#     harness = AgentHarness()
+#     state = AgentState(
+#         task="Analyze repository for security and optimization issues",
+#         repo_path=repo_path,
+#     )
+#     candidates = detect_candidates(repo_path)
+#     print(
+#         f"\n[V3] Static detector candidates: "
+#         f"{len(candidates)}"
+#     )
+
+#     for candidate in candidates:
+#         print(
+#             f"[V3] Candidate: "
+#             f"{candidate['title']} "
+#             f"({candidate['file']}:{candidate['line']})"
+#         )
+
+#     candidate_text = "\n".join(
+#         [
+#             f"""
+#             Candidate ID: {candidate['candidate_id']}
+#             Category: {candidate['category']}
+#             File: {candidate['file']}
+#             Line: {candidate['line']}
+#             Title: {candidate['title']}
+#             Evidence: {candidate['evidence']}
+#             Reason: {candidate['description']}
+#             """
+#             for candidate in candidates
+#         ]
+#     )
+
+#     contents = [
+#         types.Content(
+#             role="user",
+#             parts=[
+#                 types.Part.from_text(
+#                     text=f"""
+#     Analyze the repository at:
+    
+#     {repo_path}
+    
+#     Static analysis produced the following candidates:
+    
+#     {candidate_text}
+    
+#     Investigate each candidate using the repository tools.
+    
+#     For EVERY candidate:
+    
+#     1. Inspect the surrounding source code.
+#     2. Determine whether the issue is actually present.
+#     3. Mark it as confirmed or rejected.
+#     4. Explain your reasoning.
+    
+#     Candidates are signals, NOT confirmed findings.
+    
+#     You may also discover important issues that were
+#     not detected by the static detectors.
+    
+#     Return:
+    
+#     1. investigated_candidates
+#     2. final findings
+    
+#     Do not report rejected candidates as findings.
+#     Do not duplicate the same underlying issue.
+#     """
+#                 )
+#             ],
+#         )
+#     ]
+
+#     tool_calls = 0
+
+#     while harness.budget.can_continue():
+
+#         harness.budget.record_iteration()
+
+#         iteration = harness.budget.iterations_used
+
+#         state.iteration = iteration
+
+#         print(
+#             f"\n--- Agent iteration {iteration} ---"
+#         )
+
+#         response = _generate_content(contents)
+
+#         # Add Gemini's response to conversation history.
+#         contents.append(response.candidates[0].content)
+
+#         function_calls = []
+
+#         for part in response.candidates[0].content.parts:
+
+#             if part.function_call:
+#                 function_calls.append(
+#                     part.function_call
+#                 )
+
+#         # No tool call means the agent is finished.
+#         if not function_calls:
+
+#             print("Agent finished.")
+
+#             return response.parsed, response, tool_calls
+
+#         # Execute every requested tool.
+#         for function_call in function_calls:
+
+#             tool_name = function_call.name
+#             arguments = dict(function_call.args)
+
+#             tool_calls += 1
+
+#             print(
+#                 f"Tool call #{tool_calls}: "
+#                 f"{tool_name}({arguments})"
+#             )
+
+#             result = harness.execute_tool(
+#                 tool_name,
+#                 arguments
+#             )
+
+#             if result["status"] == "success":
+#                 state.tool_calls += 1
+
+#             print(
+#                 f"Tool result received from {tool_name}"
+#             )
+
+#             state.tool_history.append(
+#                 ToolExecution(
+#                     tool_name=tool_name,
+#                     arguments=arguments,
+#                     allowed=result["status"] != "blocked",
+#                     result=result,
+#                 )
+#             )
+
+#             contents.append(
+#                 types.Content(
+#                     role="user",
+#                     parts=[
+#                         types.Part.from_function_response(
+#                             name=tool_name,
+#                             response=result,
+#                         )
+#                     ],
+#                 )
+#             )
+
+#     raise RuntimeError(
+#         "Agent exceeded maximum iterations."
+#     )
+
 def analyze_with_agent(repo_path: str):
-    harness = AgentHarness()
+
     state = AgentState(
-        task="Analyze repository for security and optimization issues",
+        task="Analyze repository for security and optimization issues.",
         repo_path=repo_path,
     )
+
+    harness = AgentHarness()
+
     candidates = detect_candidates(repo_path)
-    print(
-        f"\n[V3] Static detector candidates: "
-        f"{len(candidates)}"
-    )
 
     for candidate in candidates:
         print(
@@ -286,104 +589,81 @@ def analyze_with_agent(repo_path: str):
     candidate_text = "\n".join(
         [
             f"""
-            Candidate ID: {candidate['candidate_id']}
-            Category: {candidate['category']}
-            File: {candidate['file']}
-            Line: {candidate['line']}
-            Title: {candidate['title']}
-            Evidence: {candidate['evidence']}
-            Reason: {candidate['description']}
-            """
+Candidate ID: {candidate['candidate_id']}
+Category: {candidate['category']}
+File: {candidate['file']}
+Line: {candidate['line']}
+Title: {candidate['title']}
+Evidence: {candidate['evidence']}
+Reason: {candidate['description']}
+"""
             for candidate in candidates
         ]
     )
 
-    contents = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(
-                    text=f"""
-    Analyze the repository at:
-    
-    {repo_path}
-    
-    Static analysis produced the following candidates:
-    
-    {candidate_text}
-    
-    Investigate each candidate using the repository tools.
-    
-    For EVERY candidate:
-    
-    1. Inspect the surrounding source code.
-    2. Determine whether the issue is actually present.
-    3. Mark it as confirmed or rejected.
-    4. Explain your reasoning.
-    
-    Candidates are signals, NOT confirmed findings.
-    
-    You may also discover important issues that were
-    not detected by the static detectors.
-    
-    Return:
-    
-    1. investigated_candidates
-    2. final findings
-    
-    Do not report rejected candidates as findings.
-    Do not duplicate the same underlying issue.
-    """
-                )
-            ],
-        )
+    input_items = [
+        {
+            "role": "user",
+            "content": f"""
+Analyze the repository at:
+
+{repo_path}
+
+Static analysis produced these candidates:
+
+{candidate_text}
+
+Investigate each candidate using the repository tools.
+
+For every candidate:
+1. Inspect the relevant source code.
+2. Determine whether it is actually present.
+3. Mark it as confirmed or rejected.
+4. Explain your reasoning.
+
+Candidates are signals, NOT confirmed findings.
+
+You may discover additional issues that were not
+detected by the static detectors.
+
+Do not report rejected candidates.
+Do not duplicate findings.
+"""
+        }
     ]
 
-    tool_calls = 0
+    for iteration in range(10):
 
-    while harness.budget.can_continue():
+        state.iteration = iteration + 1
 
-        harness.budget.record_iteration()
+        print(f"\n--- Agent iteration {state.iteration} ---")
 
-        iteration = harness.budget.iterations_used
-
-        state.iteration = iteration
-
-        print(
-            f"\n--- Agent iteration {iteration} ---"
+        response = client.responses.create(
+            model=MODEL_NAME,
+            instructions=SYSTEM_PROMPT,
+            input=input_items,
+            tools=TOOLS,
+            text={"format": RESPONSE_FORMAT},
         )
-
-        response = _generate_content(contents)
-
-        # Add Gemini's response to conversation history.
-        contents.append(response.candidates[0].content)
 
         function_calls = []
 
-        for part in response.candidates[0].content.parts:
+        for item in response.output:
+            if item.type == "function_call":
+                function_calls.append(item)
 
-            if part.function_call:
-                function_calls.append(
-                    part.function_call
-                )
-
-        # No tool call means the agent is finished.
         if not function_calls:
+            break
 
-            print("Agent finished.")
+        input_items += response.output
 
-            return response.parsed, response, tool_calls
+        for call in function_calls:
 
-        # Execute every requested tool.
-        for function_call in function_calls:
-
-            tool_name = function_call.name
-            arguments = dict(function_call.args)
-
-            tool_calls += 1
+            tool_name = call.name
+            arguments = json.loads(call.arguments)
 
             print(
-                f"Tool call #{tool_calls}: "
+                f"Tool call #{state.tool_calls + 1}: "
                 f"{tool_name}({arguments})"
             )
 
@@ -392,34 +672,28 @@ def analyze_with_agent(repo_path: str):
                 arguments
             )
 
-            if result["status"] == "success":
-                state.tool_calls += 1
+            state.tool_calls += 1
 
-            print(
-                f"Tool result received from {tool_name}"
+            if (
+                tool_name == "read_file"
+                and result.get("status") == "success"
+            ):
+                file_path = arguments.get("file_path")
+
+                if file_path:
+                    state.files_inspected.add(file_path)
+
+            input_items.append(
+                {
+                    "type": "function_call_output",
+                    "call_id": call.call_id,
+                    "output": json.dumps(result),
+                }
             )
 
-            state.tool_history.append(
-                ToolExecution(
-                    tool_name=tool_name,
-                    arguments=arguments,
-                    allowed=result["status"] != "blocked",
-                    result=result,
-                )
-            )
+    else:
+        raise RuntimeError(
+            "Agent exceeded maximum iterations."
+        )
 
-            contents.append(
-                types.Content(
-                    role="user",
-                    parts=[
-                        types.Part.from_function_response(
-                            name=tool_name,
-                            response=result,
-                        )
-                    ],
-                )
-            )
-
-    raise RuntimeError(
-        "Agent exceeded maximum iterations."
-    )
+    return response, state
