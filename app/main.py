@@ -4,6 +4,7 @@ import sys
 
 from app.detectors.merge import deduplicate_findings
 
+from .analyzer import AnalysisReport
 from .llm import analyze_with_agent
 from .repository.loader import discover_files
 
@@ -43,9 +44,13 @@ def main():
 
     start_time = time.perf_counter()
 
-    report, response, tool_calls = analyze_with_agent(
+    response, state = analyze_with_agent(
         repo_path
     )
+    report = AnalysisReport.model_validate_json(
+        response.output_text
+    )
+    tool_calls = state.tool_calls
 
     investigated = report.investigated_candidates
 
@@ -135,21 +140,21 @@ def main():
         f"{tool_calls}"
     )
 
-    if response.usage_metadata:
+    if response.usage:
 
         print(
             f"Input tokens          : "
-            f"{response.usage_metadata.prompt_token_count}"
+            f"{response.usage.input_tokens}"
         )
 
         print(
             f"Output tokens         : "
-            f"{response.usage_metadata.candidates_token_count}"
+            f"{response.usage.output_tokens}"
         )
 
         print(
             f"Total tokens          : "
-            f"{response.usage_metadata.total_token_count}"
+            f"{response.usage.total_tokens}"
         )
 
 
