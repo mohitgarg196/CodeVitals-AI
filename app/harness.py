@@ -5,7 +5,7 @@ from pathlib import Path
 class BudgetManager:
 
     max_iterations: int = 10
-    max_tool_calls: int = 12
+    max_tool_calls: int = 20
 
     iterations_used: int = 0
     tool_calls_used: int = 0
@@ -237,7 +237,7 @@ class AgentHarness:
 
         self.budget = BudgetManager(
             max_iterations=10,
-            max_tool_calls=12,
+            max_tool_calls=20,
         )
 
         self.loop_detector = LoopDetector()

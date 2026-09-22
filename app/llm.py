@@ -634,7 +634,13 @@ Do not duplicate findings.
 
     for iteration in range(10):
 
-        state.iteration = iteration + 1
+        if not harness.budget.can_continue():
+            print("\n[HARNESS] Agent budget exhausted.")
+            break
+
+        harness.budget.record_iteration()
+
+        state.iteration = harness.budget.iterations_used
 
         print(f"\n--- Agent iteration {state.iteration} ---")
 
@@ -672,7 +678,18 @@ Do not duplicate findings.
                 arguments
             )
 
-            state.tool_calls += 1
+            if result["status"] == "success":
+                state.tool_calls += 1
+
+            if result["status"] == "blocked":
+                print(
+                    f"[HARNESS] Tool blocked: "
+                    f"{result['reason']}"
+                )
+
+                if not harness.budget.can_continue():
+                    print("[HARNESS] Stopping agent due to budget.")
+                    break
 
             if (
                 tool_name == "read_file"
