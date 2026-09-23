@@ -487,18 +487,76 @@ Total tokens          : 2175
 
 V4 Architecture:
 
-                    AGENT
-                      │
-                      ▼
-               CONTEXT MANAGER
-              /       |       \
-             /        |        \
-      Candidates   File Index   History
-           │           │          │
-           └───────────┼──────────┘
-                       ▼
-               Relevant Context
+                   REPOSITORY
                        │
                        ▼
-                     LLM
-
+              Static Detection
+                       │
+                       ▼
+             Security/Optimization
+                 Candidates
+                       │
+                       ▼
+              Context Manager
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+       Rank relevant       Repository index
+          files
+             │
+             └─────────┬─────────┘
+                       ▼
+                    AGENT
+                       │
+                       ▼
+                  Tool request
+                       │
+                       ▼
+                   HARNESS
+                       │
+            ┌──────────┼──────────┐
+            ▼          ▼          ▼
+          Policy     Budget     Duplicate
+            │          │          │
+            └──────────┼──────────┘
+                       ▼
+                  Tool execution
+                       │
+             ┌─────────┴─────────┐
+             ▼                   ▼
+       read_file_region      search_code
+       read_file             dependencies
+       list_files
+             │
+             ▼
+          Raw result
+             │
+             ▼
+       Context Manager
+             │
+             ▼
+       Compact Observation
+             │
+             ▼
+          AgentState
+             │
+             ▼
+      Recent observations
+             │
+             ▼
+    Compact reasoning context
+             │
+             ▼
+            AGENT
+             │
+             ▼
+      More investigation
+             │
+             ▼
+      Soft budget reached
+             │
+             ▼
+       Wrap-up instruction
+             │
+             ▼
+        Final analysis
