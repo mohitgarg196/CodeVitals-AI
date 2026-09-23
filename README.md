@@ -481,3 +481,24 @@ Tool calls            : 4
 Input tokens          : 1492
 Output tokens         : 683
 Total tokens          : 2175
+
+
+===============================================================================================================================
+
+V4 Architecture:
+
+                    AGENT
+                      │
+                      ▼
+               CONTEXT MANAGER
+              /       |       \
+             /        |        \
+      Candidates   File Index   History
+           │           │          │
+           └───────────┼──────────┘
+                       ▼
+               Relevant Context
+                       │
+                       ▼
+                     LLM
+
