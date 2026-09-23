@@ -47,6 +47,16 @@ def main():
     response, state = analyze_with_agent(
         repo_path
     )
+    if not getattr(response, "output_text", ""):
+        print("\n[HARNESS] No final report was produced.")
+        print(f"Iterations            : {state.iteration}")
+        print(f"Tool calls            : {state.tool_calls}")
+        print(f"Blocked actions       : {state.blocked_actions}")
+        print(f"Files inspected       : {len(state.files_inspected)}")
+        print(f"Compact context chars : unavailable (see iteration logs)")
+        print(f"Raw tool result chars : logged per tool call")
+        return
+
     report = AnalysisReport.model_validate_json(
         response.output_text
     )
@@ -140,20 +150,26 @@ def main():
         f"{tool_calls}"
     )
 
+    print(f"Iterations            : {state.iteration}")
+    print(f"Blocked actions       : {state.blocked_actions}")
+    print(f"Files inspected       : {len(state.files_inspected)}")
+    print(f"Compact context chars : logged per iteration")
+    print(f"Raw tool result chars : logged per tool call")
+
     if response.usage:
 
         print(
-            f"Input tokens          : "
+            f"Final response input tokens : "
             f"{response.usage.input_tokens}"
         )
 
         print(
-            f"Output tokens         : "
+            f"Final response output tokens: "
             f"{response.usage.output_tokens}"
         )
 
         print(
-            f"Total tokens          : "
+            f"Final response total tokens : "
             f"{response.usage.total_tokens}"
         )
 
