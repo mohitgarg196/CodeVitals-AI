@@ -161,3 +161,60 @@ def get_dependencies(repo_path: str) -> dict:
     return {
         "dependencies": dependencies
     }
+
+def read_file_region(
+    repo_path: str,
+    file_path: str,
+    start_line: int,
+    end_line: int,
+) -> dict:
+
+    repo = Path(repo_path).resolve()
+    target = (repo / file_path).resolve()
+
+    try:
+        target.relative_to(repo)
+    except ValueError:
+        return {
+            "error": "Access denied: path is outside repository."
+        }
+
+    if not target.exists():
+        return {
+            "error": f"File not found: {file_path}"
+        }
+
+    if not target.is_file():
+        return {
+            "error": f"Not a file: {file_path}"
+        }
+
+    try:
+        lines = target.read_text(
+            encoding="utf-8",
+            errors="ignore",
+        ).splitlines()
+
+    except Exception as exc:
+        return {
+            "error": f"Unable to read file: {exc}"
+        }
+
+    # Keep line numbers within valid bounds.
+    start_line = max(1, start_line)
+    end_line = min(len(lines), end_line)
+
+    selected_lines = []
+
+    for line_number in range(start_line, end_line + 1):
+        selected_lines.append(
+            f"{line_number}: {lines[line_number - 1]}"
+        )
+
+    return {
+        "file": file_path,
+        "start_line": start_line,
+        "end_line": end_line,
+        "content": "\n".join(selected_lines),
+        "total_file_lines": len(lines),
+    }

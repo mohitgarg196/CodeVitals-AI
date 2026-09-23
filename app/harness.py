@@ -5,7 +5,8 @@ from pathlib import Path
 class BudgetManager:
 
     max_iterations: int = 10
-    max_tool_calls: int = 12
+    max_tool_calls: int = 32
+    soft_tool_limit: int = 25
 
     iterations_used: int = 0
     tool_calls_used: int = 0
@@ -35,11 +36,15 @@ class BudgetManager:
             - self.tool_calls_used
         )
 
+    def should_wrap_up(self):
+        return self.tool_calls_used >= self.soft_tool_limit
+
 class PolicyEngine:
 
     ALLOWED_TOOLS = {
         "list_files",
         "read_file",
+        "read_file_region",
         "search_code",
         "get_dependencies",
     }
@@ -102,6 +107,7 @@ from .tools import (
     read_file,
     search_code,
     get_dependencies,
+    read_file_region,
 )
 
 
@@ -112,6 +118,7 @@ class ToolManager:
         "read_file": read_file,
         "search_code": search_code,
         "get_dependencies": get_dependencies,
+        "read_file_region": read_file_region,
     }
 
     def __init__(
@@ -130,29 +137,19 @@ class ToolManager:
         tool_name: str,
         arguments: dict,
     ):
-        if tool_name == "read_file":
-
-            repo_path = arguments.get(
-                "repo_path"
-            )
-
-            file_path = arguments.get(
-                "file_path"
-            )
+        if tool_name in {"read_file", "read_file_region"}:
+            repo_path = arguments.get("repo_path")
+            file_path = arguments.get("file_path")
 
             if not self.policy.is_path_allowed(
                 repo_path,
                 file_path,
             ):
-
                 return {
                     "status": "blocked",
-                    "reason": (
-                        "File path is outside "
-                        "the repository."
-                    ),
+                    "reason": "File path is outside the repository.",
                 }
-    
+
         # -----------------------------
         # 1. Permission check
         # -----------------------------
@@ -237,7 +234,7 @@ class AgentHarness:
 
         self.budget = BudgetManager(
             max_iterations=10,
-            max_tool_calls=12,
+            max_tool_calls=32,
         )
 
         self.loop_detector = LoopDetector()

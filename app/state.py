@@ -12,6 +12,15 @@ class ToolExecution:
 
 
 @dataclass
+class Observation:
+    tool: str
+    file: Optional[str] = None
+    line: Optional[int] = None
+    summary: str = ""
+    evidence: str = ""
+
+
+@dataclass
 class AgentState:
 
     task: str
@@ -28,7 +37,7 @@ class AgentState:
         default_factory=list
     )
 
-    observations: list[Any] = field(
+    observations: List[Observation] = field(
         default_factory=list
     )
 
