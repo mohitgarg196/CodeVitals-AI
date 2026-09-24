@@ -639,3 +639,35 @@ Proposed Fix
    PASS              FAIL
      ↓                ↓
 Verified Fix     Fix Rejected
+
+
+===================================================================================================================================
+
+
+V7 Architecture:
+
+                    CODEVITALS
+                        │
+                  ┌─────▼─────┐
+                  │   AGENT   │
+                  └─────┬─────┘
+                        │
+              ┌─────────▼─────────┐
+              │ Existing Harness  │
+              └─────────┬─────────┘
+                        │
+              ┌─────────▼─────────┐
+              │    Analysis       │
+              └─────────┬─────────┘
+                        │
+              ┌─────────▼─────────┐
+              │    Evaluation     │
+              │                   │
+              │ Coverage          │
+              │ Finding recall    │
+              │ Precision         │
+              │ Consistency       │
+              │ Latency           │
+              │ Token cost        │
+              │ Verification      │
+              └───────────────────┘
