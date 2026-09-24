@@ -560,3 +560,50 @@ V4 Architecture:
              │
              ▼
         Final analysis
+
+
+===========================================================================================================================
+
+V5 Architecture:
+
+                         USER
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │    AGENT    │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │   HARNESS   │
+                    │             │
+                    │ Policy      │
+                    │ Budget      │
+                    │ Loop        │
+                    │ State       │
+                    └──────┬──────┘
+                           │
+                 ┌─────────┴─────────┐
+                 │                   │
+                 ▼                   ▼
+        Existing Direct Tools      MCP
+                 │                   │
+                 │           ┌───────┴───────┐
+                 │           │ MCP Server    │
+                 │           │               │
+                 │           │ Code tools    │
+                 │           │ Knowledge     │
+                 │           └───────┬───────┘
+                 │                   │
+                 ▼                   ▼
+             Repository          RAG KB
+                 │                   │
+                 └────────┬──────────┘
+                          ▼
+                  Context Manager
+                          │
+                          ▼
+                   Compact Context
+                          │
+                          ▼
+                       AGENT
