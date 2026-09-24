@@ -123,7 +123,7 @@ def main():
             )
     ]
 
-    print("\n========== V3 METRICS ==========")
+    print("\n========== V7 METRICS ==========")
 
     print(
         f"Latency               : "

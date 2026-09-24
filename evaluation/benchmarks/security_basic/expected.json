@@ -1,0 +1,29 @@
+{
+  "benchmark": "security_basic",
+  "findings": [
+    {
+      "id": "SEC-001",
+      "category": "security",
+      "type": "hardcoded_secret",
+      "file": "api_key.py"
+    },
+    {
+      "id": "SEC-002",
+      "category": "security",
+      "type": "command_injection",
+      "file": "commands.py"
+    },
+    {
+      "id": "SEC-003",
+      "category": "security",
+      "type": "unsafe_eval",
+      "file": "expressions.py"
+    },
+    {
+      "id": "SEC-004",
+      "category": "security",
+      "type": "sql_injection",
+      "file": "database.py"
+    }
+  ]
+}
