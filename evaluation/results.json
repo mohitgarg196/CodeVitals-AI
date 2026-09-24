@@ -1,0 +1,368 @@
+{
+  "benchmark": "security_basic",
+  "runs": [
+    {
+      "run_id": "run_1",
+      "findings": [
+        {
+          "finding_id": "1",
+          "category": "Code injection",
+          "severity": "critical",
+          "file": "expressions.py",
+          "line": 5,
+          "title": "Untrusted expression is executed with eval()",
+          "description": "The expression evaluator passes caller-controlled expression text to Python's eval(), allowing arbitrary Python code execution in the process context. An attacker may read application secrets, modify data, or execute operating-system commands.",
+          "evidence": "expressions.py defines an evaluation function that directly invokes eval(expression) without a restricted parser, AST validation, or an explicit safe globals/locals environment. The input is not constrained to arithmetic-only syntax before evaluation.",
+          "recommendation": "Replace eval() with a dedicated parser/evaluator for the supported expression grammar, such as an AST-based allow-list that permits only numeric literals and approved arithmetic operators. Do not rely on removing builtins or supplying an empty globals dictionary as the primary defense.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "detector"
+        },
+        {
+          "finding_id": "2",
+          "category": "Command injection",
+          "severity": "high",
+          "file": "commands.py",
+          "line": 5,
+          "title": "User-controlled data is interpolated into an OS command",
+          "description": "The command helper constructs a shell command by concatenating or formatting input and executes it through os.system(). Shell metacharacters in the input can alter the command and execute arbitrary additional commands with the application's privileges.",
+          "evidence": "commands.py invokes os.system() on a string containing the supplied command/input. The value is not passed as a separate argument, and there is no narrow allow-list or shell-independent execution path.",
+          "recommendation": "Avoid shell execution where possible. Use a library API for the operation; otherwise invoke subprocess.run() with an argument list, shell=False, and a strict allow-list for executable and arguments. Apply least-privilege execution and enforce input length/resource limits.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "detector"
+        },
+        {
+          "finding_id": "3",
+          "category": "SQL injection",
+          "severity": "high",
+          "file": "database.py",
+          "line": 8,
+          "title": "SQL query is built from untrusted input",
+          "description": "The database helper constructs SQL using string interpolation/concatenation and sends the resulting string to the database. A caller can inject SQL syntax into the input, potentially bypassing intended predicates, reading unauthorized records, or modifying data depending on the database privileges.",
+          "evidence": "database.py formats a request-derived value directly into the SQL statement before calling the database execute/query API; the value is not supplied through a parameterized placeholder.",
+          "recommendation": "Use a parameterized query and pass user-controlled values separately, for example cursor.execute('... WHERE field = ?', (value,)) or the equivalent placeholder syntax for the configured driver. Allow-list any dynamic identifiers, and use a least-privileged database account.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "agent"
+        },
+        {
+          "finding_id": "4",
+          "category": "Secrets management",
+          "severity": "high",
+          "file": "api_key.py",
+          "line": 1,
+          "title": "API key is hardcoded in source",
+          "description": "A literal API key is embedded in api_key.py. Anyone with repository, source-distribution, build-artifact, or log access can recover and use the credential; committing it also leaves it exposed in repository history even after the line is removed.",
+          "evidence": "api_key.py assigns a non-placeholder credential literal to the API-key variable at module scope.",
+          "recommendation": "Immediately revoke and rotate the exposed key. Load the replacement from an approved secret manager or runtime environment configuration, scope it to the minimum required permissions, and remove the credential from repository history where feasible. Add secret scanning to CI and keep only a clearly named configuration variable in source.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "agent"
+        }
+      ],
+      "finding_keys": [
+        {
+          "category": "security",
+          "type": "unsafe_eval",
+          "file": "expressions.py"
+        },
+        {
+          "category": "security",
+          "type": "command_injection",
+          "file": "commands.py"
+        },
+        {
+          "category": "security",
+          "type": "sql_injection",
+          "file": "database.py"
+        },
+        {
+          "category": "security",
+          "type": "hardcoded_secret",
+          "file": "api_key.py"
+        }
+      ],
+      "latency": 19.897918375,
+      "tool_calls": 10,
+      "iterations": 1,
+      "input_tokens": 10091,
+      "output_tokens": 1724,
+      "total_tokens": 11815,
+      "files_inspected": 4,
+      "rag_queries": 4,
+      "rag_results": 10,
+      "verifications_requested": 0,
+      "verifications_passed": 0,
+      "verifications_failed": 0,
+      "error": null,
+      "detection_metrics": {
+        "true_positives": 4,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "missed_findings": [],
+        "false_positive_findings": []
+      }
+    },
+    {
+      "run_id": "run_2",
+      "findings": [
+        {
+          "finding_id": "2",
+          "category": "command injection",
+          "severity": "high",
+          "file": "commands.py",
+          "line": 5,
+          "title": "Untrusted host input is concatenated into a shell command",
+          "description": "ping_host constructs a shell command by concatenating the host argument and executes it through os.system. If host is influenced by an attacker, shell metacharacters can execute arbitrary commands with the application's operating-system privileges.",
+          "evidence": "commands.py:5: os.system(\"ping -c 1 \" + host)",
+          "recommendation": "Avoid a shell entirely. Invoke ping through subprocess.run with an argument list, enforce a timeout, and validate the host as an IP address or hostname according to the application's requirements.",
+          "proposed_patch": "--- a/commands.py\n+++ b/commands.py\n@@ -1,5 +1,16 @@\n-import os\n+import ipaddress\n+import subprocess\n+\n+\n+def ping_host(host):\n+    try:\n+        ipaddress.ip_address(host)\n+    except ValueError as exc:\n+        raise ValueError(\"host must be a valid IP address\") from exc\n \n-\n-def ping_host(host):\n-    os.system(\"ping -c 1 \" + host)\n+    return subprocess.run(\n+        [\"ping\", \"-c\", \"1\", host],\n+        check=False,\n+        capture_output=True,\n+        text=True,\n+        timeout=5,\n+    )\n",
+          "verification_command": null,
+          "source": "static candidate"
+        },
+        {
+          "finding_id": "1",
+          "category": "SQL injection",
+          "severity": "high",
+          "file": "database.py",
+          "line": 2,
+          "title": "User input is interpolated into a SQL query",
+          "description": "find_user inserts username directly into a SQL string using an f-string. A crafted username can alter the query and potentially bypass filtering or expose unauthorized records. The same file already demonstrates the correct parameterized-query pattern in find_user_safely.",
+          "evidence": "database.py:2: query = f\"SELECT * FROM users WHERE name = '{username}'\"; database.py:3 executes the resulting query. database.py:7-10 uses a parameter placeholder and parameter tuple safely.",
+          "recommendation": "Replace find_user's string interpolation with a parameterized query, matching find_user_safely. Also ensure the database account has only the permissions required by this operation.",
+          "proposed_patch": "--- a/database.py\n+++ b/database.py\n@@ -1,6 +1,6 @@\n def find_user(cursor, username):\n-    query = f\"SELECT * FROM users WHERE name = '{username}'\"\n-    return cursor.execute(query).fetchone()\n+    return cursor.execute(\n+        \"SELECT * FROM users WHERE name = ?\",\n+        (username,),\n+    ).fetchone()\n \n \n def find_user_safely(cursor, username):\n",
+          "verification_command": null,
+          "source": "static candidate"
+        },
+        {
+          "finding_id": "agent-expressions-eval",
+          "category": "unsafe code execution",
+          "severity": "critical",
+          "file": "expressions.py",
+          "line": 2,
+          "title": "calculate executes arbitrary Python supplied as an expression",
+          "description": "The calculate function passes its argument directly to eval. Any caller able to influence expression can execute arbitrary Python code, including file access, process execution, and data exfiltration. There is no parser, namespace restriction, or operation allowlist.",
+          "evidence": "expressions.py:2: return eval(expression)",
+          "recommendation": "Do not use eval for untrusted input. Implement a small allowlisted expression parser/evaluator, or use a restricted arithmetic library that does not expose Python objects or function calls.",
+          "proposed_patch": "--- a/expressions.py\n+++ b/expressions.py\n@@ -1,2 +1,28 @@\n+import ast\n+import operator\n+\n+\n+_OPS = {\n+    ast.Add: operator.add,\n+    ast.Sub: operator.sub,\n+    ast.Mult: operator.mul,\n+    ast.Div: operator.truediv,\n+    ast.USub: operator.neg,\n+}\n+\n+\n def calculate(expression):\n-    return eval(expression)\n+    def evaluate(node):\n+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):\n+            return node.value\n+        if isinstance(node, ast.UnaryOp) and type(node.op) in _OPS:\n+            return _OPS[type(node.op)](evaluate(node.operand))\n+        if isinstance(node, ast.BinOp) and type(node.op) in _OPS:\n+            return _OPS[type(node.op)](evaluate(node.left), evaluate(node.right))\n+        raise ValueError(\"unsupported expression\")\n+\n+    tree = ast.parse(expression, mode=\"eval\")\n+    return evaluate(tree.body)\n",
+          "verification_command": null,
+          "source": "agent"
+        },
+        {
+          "finding_id": "agent-api-key",
+          "category": "secret management",
+          "severity": "informational",
+          "file": "api_key.py",
+          "line": 1,
+          "title": "API-key-shaped value is committed in source code",
+          "description": "The module defines an API-key-shaped constant in source. The literal explicitly says it is a test value and not a real secret, so this is not evidence of an exposed credential. Nevertheless, this pattern can lead to accidental use or replacement with a real credential during development.",
+          "evidence": "api_key.py:1: OPENAI_API_KEY = \"sk-test-v7-not-a-real-secret\"",
+          "recommendation": "Load credentials from an environment variable or approved secret manager, fail safely when production configuration is missing, and keep only clearly scoped test fixtures in test-specific files.",
+          "proposed_patch": "--- a/api_key.py\n+++ b/api_key.py\n@@ -1 +1,4 @@\n-OPENAI_API_KEY = \"sk-test-v7-not-a-real-secret\"\n+import os\n+\n+\n+OPENAI_API_KEY = os.environ.get(\"OPENAI_API_KEY\")\n",
+          "verification_command": null,
+          "source": "agent"
+        }
+      ],
+      "finding_keys": [
+        {
+          "category": "security",
+          "type": "command_injection",
+          "file": "commands.py"
+        },
+        {
+          "category": "security",
+          "type": "sql_injection",
+          "file": "database.py"
+        },
+        {
+          "category": "security",
+          "type": "unsafe_eval",
+          "file": "expressions.py"
+        },
+        {
+          "category": "security",
+          "type": "hardcoded_secret",
+          "file": "api_key.py"
+        }
+      ],
+      "latency": 32.636898208000005,
+      "tool_calls": 13,
+      "iterations": 1,
+      "input_tokens": 12536,
+      "output_tokens": 3397,
+      "total_tokens": 15933,
+      "files_inspected": 4,
+      "rag_queries": 4,
+      "rag_results": 9,
+      "verifications_requested": 0,
+      "verifications_passed": 0,
+      "verifications_failed": 0,
+      "error": null,
+      "detection_metrics": {
+        "true_positives": 4,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "missed_findings": [],
+        "false_positive_findings": []
+      }
+    },
+    {
+      "run_id": "run_3",
+      "findings": [
+        {
+          "finding_id": "1",
+          "category": "security",
+          "severity": "high",
+          "file": "commands.py",
+          "line": null,
+          "title": "Untrusted input reaches shell command execution",
+          "description": "The command execution path constructs or invokes an operating-system command using caller-controlled input. Shell metacharacters can alter the intended command, allowing arbitrary command execution with the application's privileges.",
+          "evidence": "The inspected commands.py implementation uses an OS command execution sink with input incorporated into the command rather than restricting execution to a fixed executable and validated argument list.",
+          "recommendation": "Avoid shell invocation where possible. Use a language API or subprocess execution with an argument array and shell disabled. Validate input against a narrow allow-list and run the operation with least privilege. CWE-78.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "detector"
+        },
+        {
+          "finding_id": "2",
+          "category": "security",
+          "severity": "high",
+          "file": "database.py",
+          "line": null,
+          "title": "SQL query is built with untrusted input",
+          "description": "The database access path dynamically constructs SQL using user-controlled data. An attacker can inject SQL syntax to alter the query, bypass filtering, or access and modify unauthorized records.",
+          "evidence": "The inspected database.py code interpolates or concatenates external input into a SQL statement before executing it, instead of binding the value as a query parameter.",
+          "recommendation": "Use parameterized queries or prepared statements for all external values. If identifiers must be dynamic, map them through a strict allow-list. Use a least-privileged database account. CWE-89.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "detector"
+        },
+        {
+          "finding_id": "3",
+          "category": "security",
+          "severity": "critical",
+          "file": "expressions.py",
+          "line": null,
+          "title": "Dynamic expression evaluation permits arbitrary Python execution",
+          "description": "The expression helper evaluates caller-supplied text using Python's eval-style execution. This is not a safe expression parser: an attacker may access Python objects, import modules, read files, or execute operating-system commands depending on the available globals and runtime context.",
+          "evidence": "The inspected expressions.py implementation passes a text expression directly to Python dynamic evaluation without a robust parser or an independently enforced safe subset.",
+          "recommendation": "Replace dynamic evaluation with an AST-based parser that accepts only explicitly allowed operators and literal types, or use a dedicated expression language. Do not rely on restricted globals or blacklist filtering as the primary control.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "agent"
+        },
+        {
+          "finding_id": "4",
+          "category": "security",
+          "severity": "info",
+          "file": "api_key.py",
+          "line": 1,
+          "title": "Credential-like value is embedded in source",
+          "description": "A value named OPENAI_API_KEY is committed as a module-level literal. Although the current value is explicitly marked as a non-real test key, this pattern can lead to accidental credential disclosure if a real key replaces it or is committed in repository history.",
+          "evidence": "api_key.py line 1 contains: OPENAI_API_KEY = \"sk-test-v7-not-a-real-secret\".",
+          "recommendation": "Load credentials from environment variables or an approved secret manager, keep only an obviously invalid placeholder in examples, and add secret scanning to CI. No credential rotation is required for the shown value because it is explicitly identified as non-real.",
+          "proposed_patch": null,
+          "verification_command": null,
+          "source": "agent"
+        }
+      ],
+      "finding_keys": [
+        {
+          "category": "security",
+          "type": "command_injection",
+          "file": "commands.py"
+        },
+        {
+          "category": "security",
+          "type": "sql_injection",
+          "file": "database.py"
+        },
+        {
+          "category": "security",
+          "type": "unsafe_eval",
+          "file": "expressions.py"
+        },
+        {
+          "category": "security",
+          "type": "hardcoded_secret",
+          "file": "api_key.py"
+        }
+      ],
+      "latency": 20.745972625000007,
+      "tool_calls": 9,
+      "iterations": 1,
+      "input_tokens": 9399,
+      "output_tokens": 1926,
+      "total_tokens": 11325,
+      "files_inspected": 4,
+      "rag_queries": 4,
+      "rag_results": 8,
+      "verifications_requested": 0,
+      "verifications_passed": 0,
+      "verifications_failed": 0,
+      "error": null,
+      "detection_metrics": {
+        "true_positives": 4,
+        "false_positives": 0,
+        "false_negatives": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0,
+        "missed_findings": [],
+        "false_positive_findings": []
+      }
+    }
+  ],
+  "expected_finding_count": 4,
+  "detection_metrics": {
+    "true_positives": 12,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "missed_findings": [],
+    "false_positive_findings": [],
+    "expected_findings_per_run": 4,
+    "run_cases": 3,
+    "expected_run_cases": 12,
+    "false_positive_run_details": [],
+    "missed_run_details": []
+  },
+  "consistency_metrics": {
+    "pairwise_jaccard": [
+      {
+        "run_a": "run_1",
+        "run_b": "run_2",
+        "jaccard_similarity": 1.0
+      },
+      {
+        "run_a": "run_1",
+        "run_b": "run_3",
+        "jaccard_similarity": 1.0
+      },
+      {
+        "run_a": "run_2",
+        "run_b": "run_3",
+        "jaccard_similarity": 1.0
+      }
+    ],
+    "average_consistency": 1.0
+  },
+  "performance_metrics": {
+    "average_latency": 24.426929736000005,
+    "min_latency": 19.897918375,
+    "max_latency": 32.636898208000005,
+    "average_total_tokens": 13024.333333333334,
+    "average_tool_calls": 10.666666666666666
+  },
+  "missed_findings": [],
+  "false_positives": []
+}
