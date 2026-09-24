@@ -607,3 +607,35 @@ V5 Architecture:
                           │
                           ▼
                        AGENT
+
+
+================================================================================================================================
+
+V6 Architecture:
+
+Repository
+    ↓
+Candidate Registry
+    ↓
+Agent investigates
+    ↓
+Finding
+    ↓
+Proposed Fix
+    ↓
+┌─────────────────────────┐
+│      Docker Sandbox     │
+│                         │
+│ isolated repo copy      │
+│ apply proposed fix      │
+│ run tests / checks      │
+│ collect results         │
+└────────────┬────────────┘
+             ↓
+        Verification
+             ↓
+     ┌───────┴────────┐
+     ↓                ↓
+   PASS              FAIL
+     ↓                ↓
+Verified Fix     Fix Rejected
