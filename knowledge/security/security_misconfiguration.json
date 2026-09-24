@@ -1,0 +1,10 @@
+{
+  "title": "Security Misconfiguration",
+  "keywords": ["security misconfiguration", "misconfiguration", "debug mode", "default credentials", "permissive cors", "security headers", "excessive errors"],
+  "cwe": ["CWE-16", "CWE-260", "CWE-547", "CWE-942"],
+  "owasp": ["A02:2025 Security Misconfiguration"],
+  "description": "Security misconfiguration is an insecure setting or missing hardening in an application, framework, server, cloud service, or deployment environment.",
+  "indicators": ["debug features enabled in production", "default accounts or passwords remain active", "overly permissive cross-origin or resource policies", "detailed errors or missing security directives"],
+  "prevention": ["Establish and repeatedly verify a minimal hardened configuration for every environment.", "Disable unused features and replace defaults with secure settings.", "Automate configuration checks and avoid exposing internal errors or unnecessary services."],
+  "source": "OWASP Top 10:2025 A02 Security Misconfiguration (https://top10.owasp.org/2025/A02_2025-Security_Misconfiguration/); MITRE CWE-16 (https://cwe.mitre.org/data/definitions/16.html)"
+}

@@ -1,4 +1,6 @@
 from pathlib import Path
+import hashlib
+import json
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -23,14 +25,28 @@ class InvestigatedCandidate(BaseModel):
 
 
 class Finding(BaseModel):
+    finding_id: str
     category: str
     severity: str
     file: str
     line: Optional[int] = None
     title: str
     description: str
+    evidence: str
     recommendation: str
+    proposed_patch: Optional[str] = None
+    verification_command: Optional[str] = None
     source: str = "agent"
+
+
+def make_finding_id(category, file, line, title):
+    identity = json.dumps(
+        [category, file, line, title],
+        ensure_ascii=False,
+        separators=(",", ":"),
+    )
+    digest = hashlib.sha256(identity.encode("utf-8")).hexdigest()[:16]
+    return "FND-" + digest
 
 
 class AnalysisReport(BaseModel):

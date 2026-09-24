@@ -1,0 +1,10 @@
+{
+  "title": "Command Injection",
+  "keywords": ["command", "injection", "os command", "shell", "subprocess", "system call", "command injection"],
+  "cwe": ["CWE-78", "CWE-77"],
+  "owasp": ["A05:2025 Injection"],
+  "description": "OS command injection occurs when externally controlled data changes a command or its arguments in an unsafe command execution path.",
+  "indicators": ["untrusted input concatenated into a shell command", "shell enabled for a process call with user input", "command arguments accept uncontrolled metacharacters"],
+  "prevention": ["Prefer a language API over invoking an operating-system command.", "When a command is necessary, pass executable and arguments separately without a shell.", "Validate commands and arguments against narrow allow-lists and run with least privilege."],
+  "source": "OWASP Top 10:2025 A05 Injection (https://top10.owasp.org/2025/A05_2025-Injection/); OWASP OS Command Injection Defense Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html); MITRE CWE-78 (https://cwe.mitre.org/data/definitions/78.html)"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "SQL Injection",
+  "keywords": ["sql", "injection", "database query", "sql injection", "parameterized query", "prepared statement"],
+  "cwe": ["CWE-89"],
+  "owasp": ["A05:2025 Injection"],
+  "description": "SQL injection occurs when untrusted input changes the structure or meaning of a dynamically constructed SQL statement.",
+  "indicators": ["SQL assembled with string concatenation", "untrusted values passed into raw query APIs", "query structure controlled by request data"],
+  "prevention": ["Use parameterized queries or prepared statements so data remains separate from SQL code.", "Allow-list dynamic identifiers that cannot be parameterized.", "Use least-privileged database accounts."],
+  "source": "OWASP Top 10:2025 A05 Injection (https://top10.owasp.org/2025/A05_2025-Injection/); OWASP SQL Injection Prevention Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html); MITRE CWE-89 (https://cwe.mitre.org/data/definitions/89.html)"
+}

@@ -1,0 +1,10 @@
+{
+  "title": "Path Traversal",
+  "keywords": ["path traversal", "directory traversal", "file path", "pathname", "restricted directory", "dot dot slash"],
+  "cwe": ["CWE-22", "CWE-23"],
+  "owasp": ["A01:2025 Broken Access Control"],
+  "description": "Path traversal occurs when an externally influenced path is not constrained to an intended directory, allowing access to files outside that boundary.",
+  "indicators": ["user input joined to a filesystem path", "checks that only remove traversal substrings", "file operations before canonical path containment is verified"],
+  "prevention": ["Resolve and canonicalize paths before use, then verify the result remains within the allowed root.", "Prefer server-side identifiers mapped to known files over accepting arbitrary paths.", "Apply access controls to files and directories."],
+  "source": "MITRE CWE-22 (https://cwe.mitre.org/data/definitions/22.html); OWASP Top 10:2025 A01 Broken Access Control (https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/)"
+}

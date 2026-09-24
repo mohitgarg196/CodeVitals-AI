@@ -1,0 +1,10 @@
+{
+  "title": "Server-Side Request Forgery (SSRF)",
+  "keywords": ["ssrf", "server side request forgery", "url fetch", "webhook", "internal network", "metadata service"],
+  "cwe": ["CWE-918"],
+  "owasp": ["A01:2025 Broken Access Control"],
+  "description": "SSRF occurs when an application makes a server-side request to a destination influenced by an untrusted user, potentially reaching internal or otherwise restricted services.",
+  "indicators": ["user-controlled URL passed to an HTTP client", "webhook or fetch endpoint accepts arbitrary destinations", "redirects or DNS resolution can reach private address ranges"],
+  "prevention": ["Prefer an allow-list of trusted destinations and protocols.", "Validate resolved addresses and block loopback, private, link-local, and metadata ranges.", "Restrict outbound network access and revalidate redirects."],
+  "source": "OWASP Top 10:2025 A01 Broken Access Control (https://top10.owasp.org/2025/A01_2025-Broken_Access_Control/); OWASP SSRF Prevention Cheat Sheet (https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html); MITRE CWE-918 (https://cwe.mitre.org/data/definitions/918.html)"
+}

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from .rag.retriever import retrieve
+
 
 SUPPORTED_EXTENSIONS = {
     ".py",
@@ -217,4 +219,14 @@ def read_file_region(
         "end_line": end_line,
         "content": "\n".join(selected_lines),
         "total_file_lines": len(lines),
+    }
+
+
+def get_security_guidance(query: str) -> dict:
+    results = retrieve(query)
+
+    return {
+        "query": query,
+        "guidance": results,
+        "result_count": len(results),
     }

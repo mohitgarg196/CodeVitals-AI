@@ -53,6 +53,13 @@ def main():
         print(f"Tool calls            : {state.tool_calls}")
         print(f"Blocked actions       : {state.blocked_actions}")
         print(f"Files inspected       : {len(state.files_inspected)}")
+        print(f"RAG queries           : {state.rag_queries}")
+        print(f"RAG results returned  : {state.rag_results}")
+        print(f"Verifications requested : {state.verifications_requested}")
+        print(f"Verifications passed    : {state.verifications_passed}")
+        print(f"Verifications failed    : {state.verifications_failed}")
+        print(f"Verification errors     : {state.verifications_error}")
+        print(f"Verification timeouts   : {state.verifications_timeout}")
         print(f"Compact context chars : unavailable (see iteration logs)")
         print(f"Raw tool result chars : logged per tool call")
         return
@@ -88,6 +95,8 @@ def main():
     ):
 
         print(f"Finding #{index}")
+        print(f"Finding ID    : {finding.finding_id}")
+        print("Status        : CONFIRMED")
         print(f"Category      : {finding.category}")
         print(f"Severity      : {finding.severity}")
         print(f"File          : {finding.file}")
@@ -100,6 +109,22 @@ def main():
         print(
             f"Recommendation: "
             f"{finding.recommendation}"
+        )
+        print(
+            "Proposed Fix  : "
+            + ("Available" if finding.proposed_patch else "Not available")
+        )
+        verification = next(
+            (
+                item
+                for item in state.verification_results
+                if item.finding_id == finding.finding_id
+            ),
+            None,
+        )
+        print(
+            "Verification  : "
+            + (verification.status if verification else "NOT_REQUESTED")
         )
 
         print("-" * 60)
@@ -123,7 +148,7 @@ def main():
             )
     ]
 
-    print("\n========== V3 METRICS ==========")
+    print("\n========== V6 METRICS ==========")
 
     print(
         f"Latency               : "
@@ -153,6 +178,13 @@ def main():
     print(f"Iterations            : {state.iteration}")
     print(f"Blocked actions       : {state.blocked_actions}")
     print(f"Files inspected       : {len(state.files_inspected)}")
+    print(f"RAG queries           : {state.rag_queries}")
+    print(f"RAG results returned  : {state.rag_results}")
+    print(f"Verifications requested : {state.verifications_requested}")
+    print(f"Verifications passed    : {state.verifications_passed}")
+    print(f"Verifications failed    : {state.verifications_failed}")
+    print(f"Verification errors     : {state.verifications_error}")
+    print(f"Verification timeouts   : {state.verifications_timeout}")
     print(f"Compact context chars : logged per iteration")
     print(f"Raw tool result chars : logged per tool call")
 

@@ -104,6 +104,43 @@ class ContextManager:
                 summary="Inspected dependency files: " + ", ".join(dependencies.keys()),
             )
 
+        if tool_name == "get_security_guidance":
+            guidance = result.get("guidance", [])
+            evidence_parts = []
+            for item in guidance:
+                evidence_parts.append(
+                    "Title: " + str(item.get("title", ""))
+                    + "\nDescription: " + str(item.get("description", ""))
+                    + "\nCWE: " + ", ".join(item.get("cwe", []))
+                    + "\nOWASP: " + ", ".join(item.get("owasp", []))
+                    + "\nPrevention: " + "; ".join(item.get("prevention", []))
+                )
+            return Observation(
+                tool=tool_name,
+                summary=(
+                    f"Retrieved security guidance for '{result.get('query', '')}' "
+                    f"({result.get('result_count', len(guidance))} results)."
+                ),
+                evidence=self._truncate_evidence("\n\n".join(evidence_parts)),
+            )
+
+        if tool_name == "verify_fix":
+            output = result.get("output", "")
+            error = result.get("error")
+            return Observation(
+                tool=tool_name,
+                summary=(
+                    f"Verification for finding {result.get('finding_id', '')}: "
+                    f"{result.get('status', 'ERROR')}; "
+                    f"tests run {result.get('tests_run', 0)}, "
+                    f"passed {result.get('tests_passed', 0)}, "
+                    f"failed {result.get('tests_failed', 0)}."
+                ),
+                evidence=self._truncate_evidence(
+                    (str(output) + ("\n" + str(error) if error else "")).strip()
+                ),
+            )
+
         return Observation(tool=tool_name, summary=f"Executed {tool_name}.")
 
     def build_reasoning_context(self, state, candidates, relevant_files) -> dict:

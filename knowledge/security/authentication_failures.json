@@ -1,0 +1,10 @@
+{
+  "title": "Authentication Failures",
+  "keywords": ["authentication failure", "authentication", "login", "credential stuffing", "brute force", "session fixation", "session invalidation", "weak password"],
+  "cwe": ["CWE-287", "CWE-307", "CWE-384", "CWE-798"],
+  "owasp": ["A07:2025 Authentication Failures"],
+  "description": "Authentication failures occur when an application incorrectly verifies identity or inadequately protects credentials, login flows, or authenticated sessions.",
+  "indicators": ["missing throttling for repeated login attempts", "weak or default credentials accepted", "session identifier reused after login", "tokens or sessions remain valid after logout"],
+  "prevention": ["Use established authentication and session-management components where possible.", "Apply appropriate multi-factor authentication and throttling against automated login attempts.", "Rotate session identifiers after authentication and invalidate sessions on logout and expiry."],
+  "source": "OWASP Top 10:2025 A07 Authentication Failures (https://top10.owasp.org/2025/A07_2025-Authentication_Failures/); MITRE CWE-287 (https://cwe.mitre.org/data/definitions/287.html)"
+}

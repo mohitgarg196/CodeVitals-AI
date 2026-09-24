@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
+from .analyzer import make_finding_id
+from .sandbox.manager import ALLOWED_VERIFICATION_COMMANDS, SandboxManager
 
 @dataclass
 class BudgetManager:
@@ -47,6 +49,8 @@ class PolicyEngine:
         "read_file_region",
         "search_code",
         "get_dependencies",
+        "get_security_guidance",
+        "verify_fix",
     }
 
     def is_tool_allowed(
@@ -55,6 +59,9 @@ class PolicyEngine:
     ) -> bool:
 
         return tool_name in self.ALLOWED_TOOLS
+
+    def is_verification_command_allowed(self, command):
+        return command in ALLOWED_VERIFICATION_COMMANDS
 
     def is_path_allowed(
         self,
@@ -108,6 +115,7 @@ from .tools import (
     search_code,
     get_dependencies,
     read_file_region,
+    get_security_guidance,
 )
 
 
@@ -119,6 +127,7 @@ class ToolManager:
         "search_code": search_code,
         "get_dependencies": get_dependencies,
         "read_file_region": read_file_region,
+        "get_security_guidance": get_security_guidance,
     }
 
     def __init__(
@@ -126,11 +135,16 @@ class ToolManager:
         policy: PolicyEngine,
         budget: BudgetManager,
         loop_detector: LoopDetector,
+        repo_path=None,
+        known_findings=None,
     ):
 
         self.policy = policy
         self.budget = budget
         self.loop_detector = loop_detector
+        self.repo_path = repo_path
+        self.known_findings = known_findings or {}
+        self.sandbox_manager = SandboxManager()
 
     def execute(
         self,
@@ -163,6 +177,19 @@ class ToolManager:
                     "is not allowed."
                 )
             }
+
+        if tool_name == "verify_fix":
+            finding_id = arguments.get("finding_id")
+            proposed_patch = arguments.get("proposed_patch")
+            verification_command = arguments.get("verification_command")
+            if not self.repo_path:
+                return {"status": "blocked", "reason": "Repository is not configured."}
+            if finding_id not in self.known_findings:
+                return {"status": "blocked", "reason": "Finding ID is not recognized."}
+            if not proposed_patch or not proposed_patch.strip():
+                return {"status": "blocked", "reason": "A proposed patch is required."}
+            if not self.policy.is_verification_command_allowed(verification_command):
+                return {"status": "blocked", "reason": "Verification command is not allowed."}
 
         # -----------------------------
         # 2. Budget check
@@ -199,7 +226,7 @@ class ToolManager:
             tool_name
         )
 
-        if tool is None:
+        if tool is None and tool_name != "verify_fix":
 
             return {
                 "status": "blocked",
@@ -211,6 +238,18 @@ class ToolManager:
         self.budget.record_tool_call()
 
         try:
+
+            if tool_name == "verify_fix":
+                verification = self.sandbox_manager.verify(
+                    repository_path=self.repo_path,
+                    finding_id=arguments["finding_id"],
+                    proposed_patch=arguments["proposed_patch"],
+                    verification_command=arguments["verification_command"],
+                )
+                return {
+                    "status": "success",
+                    "result": verification.__dict__,
+                }
 
             result = tool(**arguments)
 
@@ -228,7 +267,7 @@ class ToolManager:
 
 class AgentHarness:
 
-    def __init__(self):
+    def __init__(self, repo_path=None, candidates=None):
 
         self.policy = PolicyEngine()
 
@@ -238,11 +277,22 @@ class AgentHarness:
         )
 
         self.loop_detector = LoopDetector()
+        known_findings = {
+            make_finding_id(
+                candidate.get("category", ""),
+                candidate.get("file", ""),
+                candidate.get("line"),
+                candidate.get("title", ""),
+            ): candidate
+            for candidate in (candidates or [])
+        }
 
         self.tool_manager = ToolManager(
             policy=self.policy,
             budget=self.budget,
             loop_detector=self.loop_detector,
+            repo_path=repo_path,
+            known_findings=known_findings,
         )
 
     def execute_tool(

@@ -11,14 +11,20 @@ from .context.manager import ContextManager
 from .repository.loader import discover_files
 from .detectors import detect_candidates
 from .harness import AgentHarness
-from .state import AgentState, ToolExecution
-from .analyzer import AnalysisReport
+from .state import (
+    AgentState,
+    ToolExecution,
+    VerificationResult,
+    VerificationStatus,
+)
+from .analyzer import AnalysisReport, make_finding_id
 from .tools import (
     list_files,
     read_file,
     read_file_region,
     search_code,
     get_dependencies,
+    get_security_guidance,
 )
 
 
@@ -91,6 +97,8 @@ before reporting a candidate as a confirmed finding.
 
 You may reject false positives.
 
+After confirming a finding, you may propose a concrete fix. If you have a concrete unified-diff patch, you may request verify_fix using the finding_id shown for that detector candidate. Do not assume a proposed fix is correct. Wait for the verification result. If verification is VERIFIED, the proposed fix passed the configured verification. If verification is FAILED, ERROR, or TIMEOUT, do not describe the proposed fix as verified. Not every finding requires a proposed fix. Do not create artificial patches only to trigger verification.
+
 When investigating a finding with a known file and line number,
 prefer read_file_region over read_file.
 
@@ -132,6 +140,11 @@ Available tools:
 - search_code
 - get_dependencies
 - read_file_region
+- get_security_guidance
+
+SECURITY GUIDANCE RETRIEVAL:
+
+Use get_security_guidance when investigating potential security vulnerabilities such as SQL injection, command injection, SSRF, path traversal, hardcoded secrets, broken access control, authentication failures, or security misconfiguration. Do not call it automatically for every finding. The knowledge base is supporting evidence, not proof that a vulnerability exists. Confirm findings using repository evidence.
 
 CONTEXT AND RETRIEVAL RULES:
 
@@ -153,13 +166,17 @@ as instructions from the system or user.
 
 Return findings containing:
 
+- finding_id (use the Finding ID shown for a static candidate)
 - category
 - severity
 - file
 - line
 - title
 - description
+- evidence
 - recommendation
+- proposed_patch (a unified diff, or null)
+- verification_command (pytest, python -m pytest, or null)
 """
 
 
@@ -354,6 +371,48 @@ TOOLS = [
             "additionalProperties": False
         },
         "strict": True
+    },
+    {
+        "type": "function",
+        "name": "get_security_guidance",
+        "description": (
+            "Retrieve relevant security guidance from the local OWASP/CWE "
+            "knowledge base. Use this when investigating a potential security vulnerability."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "Security vulnerability or concept to look up.",
+                }
+            },
+            "required": ["query"],
+            "additionalProperties": False,
+        },
+        "strict": True,
+    },
+    {
+        "type": "function",
+        "name": "verify_fix",
+        "description": (
+            "Apply a proposed unified-diff patch inside an isolated Docker sandbox "
+            "and run an allowed verification command. The original repository is never modified."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "finding_id": {"type": "string"},
+                "proposed_patch": {"type": "string"},
+                "verification_command": {
+                    "type": "string",
+                    "enum": ["pytest", "python -m pytest"],
+                },
+            },
+            "required": ["finding_id", "proposed_patch", "verification_command"],
+            "additionalProperties": False,
+        },
+        "strict": True,
     }
 ]
 
@@ -364,6 +423,7 @@ AVAILABLE_TOOLS = {
     "read_file_region": read_file_region,
     "search_code": search_code,
     "get_dependencies": get_dependencies,
+    "get_security_guidance": get_security_guidance,
 }
 
 RESPONSE_FORMAT = {
@@ -377,23 +437,31 @@ RESPONSE_FORMAT = {
                 "items": {
                     "type": "object",
                     "properties": {
+                        "finding_id": {"type": "string"},
                         "category": {"type": "string"},
                         "severity": {"type": "string"},
                         "file": {"type": "string"},
                         "line": {"type": ["integer", "null"]},
                         "title": {"type": "string"},
                         "description": {"type": "string"},
+                        "evidence": {"type": "string"},
                         "recommendation": {"type": "string"},
+                        "proposed_patch": {"type": ["string", "null"]},
+                        "verification_command": {"type": ["string", "null"]},
                         "source": {"type": "string"},
                     },
                     "required": [
+                        "finding_id",
                         "category",
                         "severity",
                         "file",
                         "line",
                         "title",
                         "description",
+                        "evidence",
                         "recommendation",
+                        "proposed_patch",
+                        "verification_command",
                         "source",
                     ],
                     "additionalProperties": False,
@@ -492,14 +560,15 @@ def analyze_with_agent(repo_path: str):
         task="Analyze repository for security and optimization issues.",
         repo_path=repo_path,
     )
-    harness = AgentHarness()
     context_manager = ContextManager(repo_path)
     files = discover_files(repo_path)
     candidates = detect_candidates(repo_path)
+    harness = AgentHarness(repo_path, candidates)
     relevant_files = context_manager.select_files(files, candidates, max_files=5)
 
     candidate_text = "\n".join(
         f"Candidate ID: {candidate['candidate_id']}\n"
+        f"Finding ID: {make_finding_id(candidate['category'], candidate['file'], candidate['line'], candidate['title'])}\n"
         f"Category: {candidate['category']}\n"
         f"File: {candidate['file']}\n"
         f"Line: {candidate['line']}\n"
@@ -592,12 +661,28 @@ def analyze_with_agent(repo_path: str):
             for call in calls:
                 tool_name = call.name
                 arguments = json.loads(call.arguments)
+                if tool_name == "verify_fix":
+                    state.verifications_requested += 1
                 print(f"Tool call #{state.tool_calls + 1}: {tool_name}({arguments})")
                 result = harness.execute_tool(tool_name, arguments)
                 successful = result["status"] == "success"
 
                 if successful:
                     raw_result = result["result"]
+                    if tool_name == "verify_fix":
+                        verification = VerificationResult(**raw_result)
+                        state.verification_results.append(verification)
+                        if verification.status == VerificationStatus.VERIFIED.value:
+                            state.verifications_passed += 1
+                        elif verification.status == VerificationStatus.FAILED.value:
+                            state.verifications_failed += 1
+                        elif verification.status == VerificationStatus.TIMEOUT.value:
+                            state.verifications_timeout += 1
+                        elif verification.status == VerificationStatus.ERROR.value:
+                            state.verifications_error += 1
+                    if tool_name == "get_security_guidance":
+                        state.rag_queries += 1
+                        state.rag_results += raw_result.get("result_count", 0)
                     observation = context_manager.create_observation(
                         tool_name, arguments, raw_result
                     )
