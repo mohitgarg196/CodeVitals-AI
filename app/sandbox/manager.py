@@ -59,7 +59,7 @@ class SandboxManager:
             "--tmpfs",
             "/tmp:rw,noexec,nosuid,size=64m",
             "--mount",
-            f"type=bind,src={workdir},dst=/workspace,rw",
+            f"type=bind,src={workdir},dst=/workspace",
             "--workdir",
             "/workspace",
             "--env",
